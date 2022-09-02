@@ -237,6 +237,7 @@ each interface:
 - SSID
 - Channel being used
 - Noise floor (in dBm)
+- Phy temperature (in Celsius)
 
 The OID subtree under `root`.2 contains information about currently connected
 wireless clients. The value under `root`.2.1 represents the count of wireless
