@@ -66,11 +66,12 @@ wlanInterfaceEntry OBJECT-TYPE
     ::= { wlanInterfaceTable 1 }
 
 WlanInterfaceEntry ::= SEQUENCE {
-    wlanInterfaceIndex      InterfaceIndex,
-    wlanInterfaceBssid      MacAddressString,
-    wlanInterfaceSsid       DisplayString,
-    wlanInterfaceChannel    Integer32,
-    wlanInterfaceNoiseFloor Integer32
+    wlanInterfaceIndex          InterfaceIndex,
+    wlanInterfaceBssid          MacAddressString,
+    wlanInterfaceSsid           DisplayString,
+    wlanInterfaceChannel        Integer32,
+    wlanInterfaceNoiseFloor     Integer32,
+    wlanInterfacePhyTemperature Integer32
 }
 
 wlanInterfaceIndex OBJECT-TYPE
@@ -107,6 +108,13 @@ wlanInterfaceNoiseFloor OBJECT-TYPE
     STATUS      current
     DESCRIPTION "Current WLAN interface noise floor"
     ::= { wlanInterfaceEntry 5 }
+
+wlanInterfacePhyTemperature OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Current WLAN interface PHY temperature in Celsius"
+    ::= { wlanInterfaceEntry 6 }
 
 --
 --  WLAN Client Table

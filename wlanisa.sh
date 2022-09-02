@@ -37,7 +37,7 @@ OID_WLAN_CLIENT_TABLE=$OID_WLAN_CLIENTS.2
 OID_WLAN_CLIENT_ENTRY=$OID_WLAN_CLIENT_TABLE.1
 
 # Index, BSSID, SSID, Channel, Noise Floor
-WLAN_INTERFACE_TABLE_SNMP_PASS_TYPES="integer,string,string,integer,integer"
+WLAN_INTERFACE_TABLE_SNMP_PASS_TYPES="integer,string,string,integer,integer,integer"
 WLAN_INTERFACE_TABLE_FIELD_COUNT=$(echo $WLAN_INTERFACE_TABLE_SNMP_PASS_TYPES | tr ',' '\n' | wc -l)
 
 # Index, Mac, SSID, RSSI, Tx Rate, Rx Rate, Time Connected
@@ -58,9 +58,10 @@ ALL_WLAN_IFACES="$(trim $(nvram get wl_ifnames) $(nvram get wl0_vifs) $(nvram ge
 get_interfaces_info() {
     index=1
     for iface in $ALL_WLAN_IFACES; do
-        bssid=$(wl -i $iface bssid | awk '{print tolower($0)}')
-        ssid=$(wl -i $iface ssid | cut -d "\"" -f 2)
-        noise=$(wl -i $iface noise)
+        local bssid=$(wl -i $iface bssid | awk '{print tolower($0)}')
+        local ssid=$(wl -i $iface ssid | cut -d "\"" -f 2)
+        local noise=$(wl -i $iface noise)
+        local temp=$(wl -i $iface phy_tempsense | cut -d ' ' -f 1)
         wl -i $iface channel | {
             while read line; do
                 if [[ "$line" =~ "current mac channel.*" ]]; then
@@ -68,7 +69,7 @@ get_interfaces_info() {
                 fi
             done
 
-            echo index=$index,bssid=$bssid,ssid="$ssid",channel=$channel,noise=$noise
+            echo index=$index,bssid=$bssid,ssid="$ssid",channel=$channel,noise=$noise,temp=$temp
         }
         index=$((index + 1))
     done
