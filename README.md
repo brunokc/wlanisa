@@ -24,23 +24,47 @@ information available either through `wl` or any other method.
 ## Installation
 
 Copy wlanisa.sh over to your router or access point. In order for it to survive
-reboots, enable JFFS and copy it under `/jffs`. Ensure it can be executed by
-`snmpd`:
+reboots, enable JFFS (under Administration -> JFFS) and copy it somewhere under
+`/jffs` (e.g.: `/jffs/snmp`). Ensure it can be run by `snmpd`:
 
 ```
 chmod a+x /jffs/wlanisa.sh
 ```
 
-Configure `snmpd` to delegate our OID tree to wlanisa by adding these lines to
-your `/etc/snmpd.conf`:
+Next, we need to configure `snmpd` to delegate our OID tree to wlanisa and that's
+done by modifying `/etc/snmpd.conf`. However, just like wlanisa.sh itself,
+modifications to this file will be lost on reboot or shutdown. We need to copy
+the configuration file under `/jffs/snmp` as well. Then, add these lines to
+`snmpd` config file (now under `/jffs/snmp/snmpd.conf`):
 
 ```
-pass .1.3.6.1.4.1.9999 /jffs/wlanisa.sh
+pass .1.3.6.1.4.1.9999 /jffs/snmp/wlanisa.sh
 view all included .1.3.6.1.4.1.9999
 ```
 
 Note that the use of the OID tree rooted at `.1.3.6.1.4.1.9999` (enterprise 9999)
 was done as an example only and it should be replaced by a real OID before use.
+
+Lastly, we need to instruction FreshTomato to use this new configuration file.
+We do this by turning off SNMP support (under Administration -> SNMP and
+unchecking the "Enable SNMP" checkbox) and then adding a script to start `snmpd`
+manually during initialization. Go to Administration -> Scripts and under the
+Init tab, paste this script:
+
+```
+# Start snmpd using the config file from /jffs/snmp if available
+# Disable SNMP in Administration -> SNMP for this to take effect
+if [ -f /jffs/snmp/snmpd.conf -a ! "$(pidof snmpd)" ]; then
+    snmpd -c /jffs/snmp/snmpd.conf
+fi
+```
+
+Now you can reboot the router for these changes to take effect. Or, if you prefer,
+SSH into the router and manually start it:
+
+```
+snmpd -c /jffs/snmp/snmpd.conf
+````
 
 ## Clients and MIBs
 
@@ -62,6 +86,8 @@ WLAN-INFO-MIB::wlanInterfaceChannel.1 = INTEGER: 1
 WLAN-INFO-MIB::wlanInterfaceChannel.2 = INTEGER: 38
 WLAN-INFO-MIB::wlanInterfaceNoiseFloor.1 = INTEGER: -91
 WLAN-INFO-MIB::wlanInterfaceNoiseFloor.2 = INTEGER: -90
+WLAN-INFO-MIB::wlanInterfacePhyTemperature.1 = INTEGER: 60
+WLAN-INFO-MIB::wlanInterfacePhyTemperature.2 = INTEGER: 68
 WLAN-INFO-MIB::wlanClientCount.0 = Counter32: 19
 WLAN-INFO-MIB::wlanClientIndex.1 = INTEGER: 1
 WLAN-INFO-MIB::wlanClientIndex.2 = INTEGER: 2
