@@ -18,9 +18,9 @@
 #
 #set -x
 
-LOG_FILE=/var/log/wlclients_snmp_agent.log
-PID_FILE=/var/run/wlclients_snmp_agent.pid
-CLIENTS_CACHE_FILE=/tmp/wlclients_snmp_agent.clients.cache
+LOG_FILE=/var/log/wlanisa.log
+PID_FILE=/var/run/wlanisa.pid
+CLIENTS_CACHE_FILE=/tmp/wlanisa.clients.cache
 CLIENTS_CACHE_AGE_SEC=30
 
 # WLAN-CLIENTS-MIB
