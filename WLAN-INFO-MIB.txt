@@ -1,4 +1,4 @@
-WLAN-CLIENTS-MIB DEFINITIONS ::= BEGIN
+WLAN-INFO-MIB DEFINITIONS ::= BEGIN
 
 --
 -- Draft MIB objects for WLAN Information
