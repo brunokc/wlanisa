@@ -1,24 +1,27 @@
 #!/bin/sh -f
 #
-# Exposes the list of WLAN interfaces and currently connected wireless clients
-# via SNMP through Net-SNMP's "pass/pass_persist" feature.
+# wlclients_snmp_agent.sh
+#
+# SNMP agent that exposes the list of WLAN interfaces and currently connected
+# wireless clients via SNMP through Net-SNMP's "pass/pass_persist" feature.
 #
 # Meant to be used on home routers/access points based on busybox. It requires
 # Net-SNMP server (snmpd) and the Broadcom wl utility.
 #
-# Install by adding these lines to you /etc/snmpd.conf:
+# Install it by adding these lines to your /etc/snmpd.conf:
 #
 # pass .1.3.6.1.4.1.9999 <path_to_this_script>
 # view all included .1.3.6.1.4.1.9999
 #
-# Note that the use of the OID .1.3.6.1.4.1.9999 is temporary as it's not a
-# formally registered OID with IANA.
+# Note that the use of the OID .1.3.6.1.4.1.9999 (enterprise 9999) is an example
+# and it should be replaced by a real one.
 #
 #set -x
 
-CLIENTS_CACHE_FILE=/tmp/wlclients_snmp_agent.clients.cache
 LOG_FILE=/var/log/wlclients_snmp_agent.log
 PID_FILE=/var/run/wlclients_snmp_agent.pid
+CLIENTS_CACHE_FILE=/tmp/wlclients_snmp_agent.clients.cache
+CLIENTS_CACHE_AGE_SEC=30
 
 # WLAN-CLIENTS-MIB
 OID_ROOT=".1.3.6.1.4.1.9999"
@@ -72,7 +75,7 @@ get_interfaces_info() {
 }
 
 cache_current_clients() {
-    # Initialize output files
+    # Initialize output file
     > $CLIENTS_CACHE_FILE
 
     index=1
@@ -82,10 +85,8 @@ cache_current_clients() {
             rssi=$(wl -i $iface rssi $mac)
             wl -i $iface sta_info $mac | {
                 while read line; do
-                    # echo line=$line
                     # "in network (\d+) seconds"
                     if [[ "$line" =~ "in network .* seconds" ]]; then
-                        # echo match found!
                         line=${line#*network }
                         line=${line% seconds}
                         connTime=$line
@@ -94,7 +95,6 @@ cache_current_clients() {
                         direction=${line% pkt*}
                         line=${line#*pkt: }
                         speed=${line% kbps}
-                        # echo dir=$direction, speed=$speed
                         case $direction in
                             "tx") tx=$speed;;
                             "rx") rx=$speed;;
@@ -109,11 +109,22 @@ cache_current_clients() {
     done
 }
 
+refresh_client_cache_if_needed() {
+    local now=$(date +%s)
+    local cache_age=0
+    if [ -f $CLIENTS_CACHE_FILE ]; then
+        cache_age=$(date +%s -r $CLIENTS_CACHE_FILE)
+    fi
+
+    local aged_out=$(( (now - cache_age) > $CLIENTS_CACHE_AGE_SEC))
+    if [ $aged_out -eq 1 ]; then
+        cache_current_clients
+    fi
+}
+
 get_oid_part() {
     local oid=$1
     local index=$2
-    # set -- `echo ${oid} | cut -d "." -O " " -f 2-`; for i in "$@"; do echo $i; done
-    # echo ${oid} | cut -d "." -O " " -f ${index}-
     local parts=$(echo $oid | tr '.' '\n' | grep -v "^$")
     if [ $index -lt 0 ]; then
         local num_parts=$(echo $oid | tr '.' '\n' | grep -v "^$" | wc -l)
@@ -126,7 +137,7 @@ get_record_part() {
     # Assumes records with key/value pairs separated by commas
     # Examples:
     # index=1,bssid=c4:04:15:1b:d3:a3,ssid=BKCWLAN-N600,channel=1,noise=-87 (interfaces)
-    #
+    # index=1,mac=00:51:ed:fe:34:e1,ssid=BKCWLAN-N600,RSSI=-68,tx=72222,rx=19500,t=134
     local record=$1
     local field_number=$2
     local field=$(echo $record | cut -d "," -f $field_number)
@@ -160,6 +171,8 @@ find_next_client() {
     local field_index=$(get_oid_part $rest 1)
     local client_index=$(get_oid_part $rest 2)
     client_index=${client_index:-0}
+
+    refresh_client_cache_if_needed
     local client_count=$(cat $CLIENTS_CACHE_FILE | wc -l)
     if [ $client_index -eq $client_count -a $field_index -eq $WLAN_CLIENT_TABLE_FIELD_COUNT ]; then
         # Reached the last field of the last client. We're done
@@ -266,9 +279,7 @@ dispatch_oid_interfaces() {
 }
 
 dispatch_clients_count() {
-    if [ ! -f $CLIENTS_CACHE_FILE ]; then
-        cache_current_clients
-    fi
+    refresh_client_cache_if_needed
 
     echo $oid
     echo counter
@@ -281,11 +292,11 @@ dispatch_oid_clients() {
     local field_index=$(get_oid_part $oid -2)
     local client_index=$(get_oid_part $oid -1)
 
-    # Cache all clients when attempting to retrieve the first property (index 1)
-    # of the first client (client_index 1). This way we'll end up with a consistent
-    # view across the whole client enumeration.
-    if { [ $client_index -eq 1 ] && [ $field_index -eq 1 ]; } || [ ! -f $CLIENTS_CACHE_FILE ]; then
-        cache_current_clients
+    # Cache clients (if needed) when attempting to retrieve the first property (index 1) of the
+    # first client (client_index 1). This way we'll end up with a consistent view across the
+    # whole client enumeration.
+    if [ $client_index -eq 1 -a $field_index -eq 1 ]; then
+        refresh_client_cache_if_needed
     fi
 
     local record=$(awk "NR==$client_index { print; exit; }" $CLIENTS_CACHE_FILE)
