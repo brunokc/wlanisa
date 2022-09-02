@@ -22,6 +22,8 @@ LOG_FILE=/var/log/wlanisa.log
 PID_FILE=/var/run/wlanisa.pid
 CLIENTS_CACHE_FILE=/tmp/wlanisa.clients.cache
 CLIENTS_CACHE_AGE_SEC=30
+INTERFACES_CACHE_FILE=/tmp/wlanisa.interfaces.cache
+INTERFACES_CACHE_AGE_SEC=30
 
 # WLAN-CLIENTS-MIB
 OID_ROOT=".1.3.6.1.4.1.9999"
@@ -55,7 +57,9 @@ trim() {
 
 ALL_WLAN_IFACES="$(trim $(nvram get wl_ifnames) $(nvram get wl0_vifs) $(nvram get wl1_vifs))"
 
-get_interfaces_info() {
+cache_interface_info() {
+    > $INTERFACES_CACHE_FILE
+
     index=1
     for iface in $ALL_WLAN_IFACES; do
         local bssid=$(wl -i $iface bssid | awk '{print tolower($0)}')
@@ -69,10 +73,23 @@ get_interfaces_info() {
                 fi
             done
 
-            echo index=$index,bssid=$bssid,ssid="$ssid",channel=$channel,noise=$noise,temp=$temp
+            echo index=$index,bssid=$bssid,ssid="$ssid",channel=$channel,noise=$noise,temp=$temp >> $INTERFACES_CACHE_FILE
         }
         index=$((index + 1))
     done
+}
+
+refresh_interface_cache_if_needed() {
+    local now=$(date +%s)
+    local cache_age=0
+    if [ -f $INTERFACES_CACHE_FILE ]; then
+        cache_age=$(date +%s -r $INTERFACES_CACHE_FILE)
+    fi
+
+    local aged_out=$(( (now - cache_age) > $INTERFACES_CACHE_AGE_SEC))
+    if [ $aged_out -eq 1 ]; then
+        cache_interface_info
+    fi
 }
 
 cache_current_clients() {
@@ -265,7 +282,15 @@ dispatch_oid_interfaces() {
     local field_index=$(get_oid_part $oid -2)
     local iface_index=$(get_oid_part $oid -1)
 
-    local record=$(get_interfaces_info | awk "NR==$iface_index { print; exit; }")
+    # Cache interfaces (if needed) when attempting to retrieve the first property
+    # (index 1) of the first interface (iface_index 1). This way we'll end up with
+    # a consistent view across the whole client enumeration.
+    if [ $iface_index -eq 1 -a $field_index -eq 1 ]; then
+        refresh_interface_cache_if_needed
+    fi
+
+    # local record=$(get_interfaces_info | awk "NR==$iface_index { print; exit; }")
+    local record=$(awk "NR==$iface_index { print; exit; }" $INTERFACES_CACHE_FILE)
     if [ -z $record ]; then
         return
     fi
@@ -293,9 +318,9 @@ dispatch_oid_clients() {
     local field_index=$(get_oid_part $oid -2)
     local client_index=$(get_oid_part $oid -1)
 
-    # Cache clients (if needed) when attempting to retrieve the first property (index 1) of the
-    # first client (client_index 1). This way we'll end up with a consistent view across the
-    # whole client enumeration.
+    # Cache clients (if needed) when attempting to retrieve the first property
+    # (index 1) of the first client (client_index 1). This way we'll end up with
+    # a consistent view across the whole client enumeration.
     if [ $client_index -eq 1 -a $field_index -eq 1 ]; then
         refresh_client_cache_if_needed
     fi
