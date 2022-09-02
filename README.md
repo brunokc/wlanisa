@@ -1,17 +1,19 @@
 # WLAN Information SNMP Agent (wlanisa.sh)
 
-wlanisa is a SNMP agent that exposes the list of WLAN interfaces and currently
-connected wireless clients through Net-SNMP's "pass" feature.
+Wlanisa is a SNMP agent written in shell script (sh) that exposes the list of
+WLAN interfaces and currently connected wireless clients. It uses
+[Net-SNMP](http://www.net-snmp.org/)'s ["pass"](https://net-snmp.sourceforge.io/wiki/index.php/Net-snmp_extensions) feature to extend the SNMP server.
 
 It is meant to be used on home routers/access points based on BusyBox. It requires
 Net-SNMP server (snmpd) and the Broadcom's wl utility.
 
-Wlanisa.sh was born from the need to obtain a list of the currently connected
-clients. It's possible to obtain that list by visiting the router's device list
-page. However, that requires logging into the router (and storing its credentials)
-and it requires parsing content from the router's HTML pages. Even though I ended
-up with a script that was able to do that, I figured obtaining that information
-through SNMP was a better approach.
+Wlanisa.sh was born of the need to list the currently connected wireless clients
+of a Netgear R7000 router running FreshTomato version 2022.3. It's usually
+possible to obtain such list by visiting the router's device list page. However,
+that requires logging into the router (and storing credentials to it) and it
+requires parsing content from the router's web pages. Even though it's possible
+to write such code, it's cumbersome and prone to broke if the page were to ever
+change. Obtaining such information through SNMP is a better approach.
 
 This SNMP agent gets all information it needs from the router's NVRAM and from
 the output of the `wl` utility. It exposes the same information currently provided
@@ -20,9 +22,9 @@ information available either through `wl` or any other method.
 
 ## Installation
 
-Copy the script over to your router or access point. In order for it to survive
-reboots, enable JFFS and copy the script over under `/jffs`. Ensure it can be
-executable by `snmpd`:
+Copy wlanisa.sh over to your router or access point. In order for it to survive
+reboots, enable JFFS and copy it under `/jffs`. Ensure it can be executed by
+`snmpd`:
 
 ```
 chmod a+x /jffs/wlanisa.sh
@@ -32,16 +34,12 @@ Configure `snmpd` to delegate our OID tree to wlanisa by adding these lines to
 your `/etc/snmpd.conf`:
 
 ```
-pass .1.3.6.1.4.1.9999 <path_to_wlanisa.sh>
+pass .1.3.6.1.4.1.9999 /jffs/wlanisa.sh
 view all included .1.3.6.1.4.1.9999
 ```
 
 Note that the use of the OID tree rooted at `.1.3.6.1.4.1.9999` (enterprise 9999)
 was done as an example only and it should be replaced by a real OID before use.
-
-## Environment
-
-Wlanisa.sh was tested on a Netgear R7000 router running FreshTomato version 2022.3.
 
 ## Clients and MIBs
 
@@ -198,3 +196,32 @@ WLAN-INFO-MIB::wlanClientTimeConnected.17 = INTEGER: 66089
 WLAN-INFO-MIB::wlanClientTimeConnected.18 = INTEGER: 179399
 WLAN-INFO-MIB::wlanClientTimeConnected.19 = INTEGER: 179401
 ```
+
+## Schema
+
+Assuming our root at `.1.3.6.1.4.1.9999.2.10`, the OID subtree under `root`.1
+(or `.1.3.6.1.4.1.9999.2.10.1`) will contain information about the device's
+WLAN interfaces. Value `root`.1.1 represents the count of interfaces, and interface
+information is listed under `root`.1.2.1. Currently the following is listed for
+each interface:
+
+- Index
+- BSSID
+- SSID
+- Channel being used
+- Noise floor (in dBm)
+
+The OID subtree under `root`.2 contains information about currently connected
+wireless clients. The value under `root`.2.1 represents the count of wireless
+clients, while the client information is listed under OID `root`.2.2.1. Currently,
+the following is listed for each connected wireless client:
+
+- Index
+- MAC address
+- SSID it is connected to
+- RSSI (in dBm)
+- Transmit rate (in kbps)
+- Receive rate (in kbps)
+- Time connected (in seconds)
+
+For more details about the data and data types available, consult the WLAN-INFO-MIB.TXT file.
