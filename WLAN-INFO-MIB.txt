@@ -23,14 +23,12 @@ MacAddressString ::= TEXTUAL-CONVENTION
 
 kraychete MODULE-IDENTITY
     LAST-UPDATED "202208270631Z"
-    ORGANIZATION "www.kraychete.com"
+    ORGANIZATION "Kraychete.com"
     CONTACT-INFO
-        "postal:   Bruno Kraychete da Costa
-                   Redmond WA  98052
-
-         email:    brunokc@kraychete.com"
+        "Bruno Kraychete da Costa
+         email: brunokc@kraychete.com"
     DESCRIPTION
-        "The management information definitions for SNMP."
+        "The initial version of this MIB, in draft and currently unpublished."
     ::= { enterprises 9999 }
 
 network OBJECT IDENTIFIER ::= { kraychete 2 }
