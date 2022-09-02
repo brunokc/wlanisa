@@ -16,9 +16,7 @@
 #
 #set -x
 
-#STAMP=$(date +"%Y%m%d-%H%M%S")
 CLIENTS_CACHE_FILE=/tmp/wlclients_snmp_agent.clients.cache
-#CURSOR_FILE=/tmp/wlclients_snmp_agent.cursor
 LOG_FILE=/var/log/wlclients_snmp_agent.log
 PID_FILE=/var/run/wlclients_snmp_agent.pid
 
@@ -76,7 +74,6 @@ get_interfaces_info() {
 cache_current_clients() {
     # Initialize output files
     > $CLIENTS_CACHE_FILE
-    #echo 1 > $CURSOR_FILE
 
     index=1
     for iface in $ALL_WLAN_IFACES; do
@@ -139,8 +136,6 @@ get_record_part() {
 find_next_interface() {
     local oid=$1
     local rest=${oid#$OID_WLAN_INTERFACE_ENTRY.}
-    # local iface_index=${rest%.*}
-    # local index=${rest#*.}
     local field_index=$(get_oid_part $rest 1)
     local iface_index=$(get_oid_part $rest 2)
     iface_index=${iface_index:-0}
@@ -162,8 +157,6 @@ find_next_interface() {
 find_next_client() {
     local oid=$1
     local rest=${oid#$OID_WLAN_CLIENT_ENTRY.}
-    # local client_index=${rest%.*}
-    # local index=${rest#*.}
     local field_index=$(get_oid_part $rest 1)
     local client_index=$(get_oid_part $rest 2)
     client_index=${client_index:-0}
@@ -194,9 +187,6 @@ find_next() {
         $OID_WLAN_INTERFACE_ENTRY| \
         $OID_WLAN_INTERFACE_ENTRY.1) echo $OID_WLAN_INTERFACE_ENTRY.1.1;;
 
-        # BUG: this will only work for single digit to represent client entries/properties
-        # $OID_WLAN_INTERFACE_ENTRY.[[:digit:]]| \
-        # $OID_WLAN_INTERFACE_ENTRY.[[:digit:]].[[:digit:]]) find_next_interface $oid;;
         $OID_WLAN_INTERFACE_ENTRY.*) find_next_interface $oid;;
 
         $OID_WLAN_CLIENTS| \
@@ -208,19 +198,12 @@ find_next() {
         $OID_WLAN_CLIENT_ENTRY| \
         $OID_WLAN_CLIENT_ENTRY.1) echo $OID_WLAN_CLIENT_ENTRY.1.1;;
 
-        # BUG: this will only work for single digit to represent client entries/properties
-        # $OID_WLAN_CLIENT_ENTRY.[[:digit:]]| \
-        # $OID_WLAN_CLIENT_ENTRY.[[:digit:]].[[:digit:]]) find_next_client $oid;;
         $OID_WLAN_CLIENT_ENTRY.*) find_next_client $oid;;
 
         $OID_ROOT| \
         $OID_NETWORK_ROOT| \
         $OID_WLAN_ROOT| \
         $OID_WLAN_INTERFACES) echo $OID_WLAN_INTERFACE_COUNT.0;;
-        # $OID_WLAN_INTERFACES.*| \
-        #$OID_WLAN_ROOT.*| \
-        #$OID_NETWORK_ROOT.*| \
-        #$OID_ROOT.*
     esac
 }
 
@@ -359,5 +342,4 @@ if [ "$cmd" = "-n" -o "$cmd" = "-x" ]; then
 fi
 
 (dispatch_oid $cmd $oid 2>> $LOG_FILE) | tee -a $LOG_FILE
-#dispatch_oid $cmd $oid
 exit 0
