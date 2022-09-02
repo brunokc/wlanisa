@@ -154,8 +154,8 @@ get_oid_part() {
 get_record_part() {
     # Assumes records with key/value pairs separated by commas
     # Examples:
-    # index=1,bssid=c4:04:15:1b:d3:a3,ssid=BKCWLAN-N600,channel=1,noise=-87 (interfaces)
-    # index=1,mac=00:51:ed:fe:34:e1,ssid=BKCWLAN-N600,RSSI=-68,tx=72222,rx=19500,t=134
+    # interfaces: index=1,bssid=<mac_address>,ssid=<ssid>,channel=1,noise=-87
+    # clients: index=3,mac=<mac_address>,ssid=<ssid>,RSSI=-68,tx=72222,rx=19500,t=134
     local record=$1
     local field_number=$2
     local field=$(echo $record | cut -d "," -f $field_number)
