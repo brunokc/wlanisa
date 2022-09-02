@@ -1,7 +1,7 @@
 WLAN-CLIENTS-MIB DEFINITIONS ::= BEGIN
 
 --
--- Draft MIB objects for WLAN Client information
+-- Draft MIB objects for WLAN Information
 --
 
 IMPORTS
@@ -14,7 +14,6 @@ IMPORTS
 ;
 
 MacAddressString ::= TEXTUAL-CONVENTION
-    --DISPLAY-HINT    "17a"
     STATUS          current
     DESCRIPTION
         "Textual representation of a MAC address (6 octets). We use it here
@@ -35,6 +34,7 @@ kraychete MODULE-IDENTITY
     ::= { enterprises 9999 }
 
 network OBJECT IDENTIFIER ::= { kraychete 2 }
+
 wlan OBJECT IDENTIFIER ::= { network 10 }
 
 --
