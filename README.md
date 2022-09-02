@@ -4,16 +4,17 @@ Wlanisa is a SNMP agent written in shell script (sh) that exposes the list of
 WLAN interfaces and currently connected wireless clients. It uses
 [Net-SNMP](http://www.net-snmp.org/)'s ["pass"](https://net-snmp.sourceforge.io/wiki/index.php/Net-snmp_extensions) feature to extend the SNMP server.
 
-It is meant to be used on home routers/access points based on BusyBox. It requires
-Net-SNMP server (snmpd) and the Broadcom's wl utility.
+It is meant to be used on home routers/access points based on
+[BusyBox](https://www.busybox.net/). It requires Net-SNMP server (snmpd) and the
+Broadcom's `wl` utility.
 
 Wlanisa.sh was born of the need to list the currently connected wireless clients
-of a Netgear R7000 router running FreshTomato version 2022.3. It's usually
-possible to obtain such list by visiting the router's device list page. However,
-that requires logging into the router (and storing credentials to it) and it
-requires parsing content from the router's web pages. Even though it's possible
-to write such code, it's cumbersome and prone to broke if the page were to ever
-change. Obtaining such information through SNMP is a better approach.
+of a Netgear R7000 router running [FreshTomato](https://freshtomato.org/) version
+2022.3. It's usually possible to obtain such list by visiting the router's device
+list page. However, that requires logging into the router (and storing credentials
+to it) and it requires parsing content from the router's web pages. Even though
+it's possible to write such code, it's cumbersome and prone to broke if the page
+were to ever change. Obtaining such information through SNMP is a better approach.
 
 This SNMP agent gets all information it needs from the router's NVRAM and from
 the output of the `wl` utility. It exposes the same information currently provided
