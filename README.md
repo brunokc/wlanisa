@@ -2,7 +2,7 @@
 
 Wlanisa is a SNMP agent written in shell script (sh) that exposes the list of
 WLAN interfaces and currently connected wireless clients. It uses
-[Net-SNMP](http://www.net-snmp.org/)'s ["pass"](https://net-snmp.sourceforge.io/wiki/index.php/Net-snmp_extensions) feature to extend the SNMP server.
+[Net-SNMP](http://www.net-snmp.org/)'s ["pass"](https://net-snmp.sourceforge.io/wiki/index.php/Net-snmp_extensions) [^1] feature to extend the SNMP server.
 
 It is meant to be used on home routers/access points based on
 [BusyBox](https://www.busybox.net/). It requires Net-SNMP server (snmpd) and the
@@ -226,3 +226,20 @@ the following is listed for each connected wireless client:
 - Time connected (in seconds)
 
 For more details about the data and data types available, consult the WLAN-INFO-MIB.TXT file.
+
+## Known Issues
+
+**It's slow!**
+
+The pass feature of Net-SNMP works by invoking the script for every single OID.
+For the output above, the script was called 145 times.
+
+## Future Plans
+
+Look into using [`dlmod`](http://www.net-snmp.org/wiki/index.php/TUT:Writing_a_Dynamically_Loadable_Object) instead of `pass` in Net-SNMP. Using
+`dlmod` would mean the code is always resident and available, but it requires a
+full rewrite of the agent in C, which is more complicated and will demand more
+time.
+
+[^1]: Unfortunately, `snmpd` on FreshTomato does not seems to support the `pass_persist`
+feature, which could make wlanisa faster by avoiding the multiple invocations.
