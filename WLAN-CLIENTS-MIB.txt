@@ -1,0 +1,200 @@
+WLAN-CLIENTS-MIB DEFINITIONS ::= BEGIN
+
+--
+-- Draft MIB objects for WLAN Client information
+--
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, TimeTicks,
+          Counter32, Gauge32, Integer32,
+          enterprises                       FROM SNMPv2-SMI
+    TEXTUAL-CONVENTION, DisplayString,
+    MacAddress                              FROM SNMPv2-TC
+    InterfaceIndex                          FROM IF-MIB
+;
+
+MacAddressString ::= TEXTUAL-CONVENTION
+    --DISPLAY-HINT    "17a"
+    STATUS          current
+    DESCRIPTION
+        "Textual representation of a MAC address (6 octets). We use it here
+        instead of MacAddress (from SNMPv2-TC) because the latter expects data
+        in binary, which is hard to produce from shell scripts"
+    SYNTAX          OCTET STRING (SIZE(17))
+
+kraychete MODULE-IDENTITY
+    LAST-UPDATED "202208270631Z"
+    ORGANIZATION "www.kraychete.com"
+    CONTACT-INFO
+        "postal:   Bruno Kraychete da Costa
+                   Redmond WA  98052
+
+         email:    brunokc@kraychete.com"
+    DESCRIPTION
+        "The management information definitions for SNMP."
+    ::= { enterprises 9999 }
+
+network OBJECT IDENTIFIER ::= { kraychete 2 }
+wlan OBJECT IDENTIFIER ::= { network 10 }
+
+--
+--  WLAN Interfaces
+--
+
+wlanInterfaces OBJECT IDENTIFIER ::= { wlan 1 }
+
+wlanInterfaceCount OBJECT-TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION
+            "The number of WLAN interfaces (regardless of their
+             current state) present on this system."
+    ::= { wlanInterfaces 1 }
+
+wlanInterfaceTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF WlanInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION "WLAN Interfaces table"
+    ::= { wlanInterfaces 2 }
+
+wlanInterfaceEntry OBJECT-TYPE
+    SYNTAX      WlanInterfaceEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION "Conceptual row in the WlanInterfaces table."
+    INDEX   { wlanInterfaceIndex }
+    ::= { wlanInterfaceTable 1 }
+
+WlanInterfaceEntry ::= SEQUENCE {
+    wlanInterfaceIndex      InterfaceIndex,
+    wlanInterfaceBssid      MacAddressString,
+    wlanInterfaceSsid       DisplayString,
+    wlanInterfaceChannel    Integer32,
+    wlanInterfaceNoiseFloor Integer32
+}
+
+wlanInterfaceIndex OBJECT-TYPE
+    SYNTAX      InterfaceIndex
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Index of the interface"
+    ::= { wlanInterfaceEntry 1 }
+
+wlanInterfaceBssid OBJECT-TYPE
+    SYNTAX      MacAddressString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "BSSID of the interface"
+    ::= { wlanInterfaceEntry 2 }
+
+wlanInterfaceSsid OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(0..64))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "SSID advertised by the interface"
+    ::= { wlanInterfaceEntry 3 }
+
+wlanInterfaceChannel OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Current WLAN interface channel"
+    ::= { wlanInterfaceEntry 4 }
+
+wlanInterfaceNoiseFloor OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Current WLAN interface noise floor"
+    ::= { wlanInterfaceEntry 5 }
+
+--
+--  WLAN Client Table
+--
+
+wlanClients OBJECT IDENTIFIER ::= { wlan 2 }
+
+wlanClientCount OBJECT-TYPE
+    SYNTAX      Counter32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "The number of WLAN clients currently connected to the system."
+    ::= { wlanClients 1 }
+
+wlanClientTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF WlanClientEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION "WLAN Clients table"
+    ::= { wlanClients 2 }
+
+wlanClientEntry OBJECT-TYPE
+    SYNTAX      WlanClientEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION "Conceptual row in the WlanClients table."
+    INDEX   { wlanClientIndex }
+    ::= { wlanClientTable 1 }
+
+WlanClientEntry ::= SEQUENCE {
+    wlanClientIndex         InterfaceIndex,
+    wlanClientMac           MacAddressString,
+    wlanClientSsid          DisplayString,
+    wlanClientRssi          Integer32,
+    wlanClientTxRate        Integer32,
+    wlanClientRxRate        Integer32,
+    wlanClientTimeConnected Integer32
+}
+
+wlanClientIndex OBJECT-TYPE
+    SYNTAX      InterfaceIndex
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Index of the client"
+    ::= { wlanClientEntry 1 }
+
+wlanClientMac OBJECT-TYPE
+    SYNTAX      MacAddressString
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "MAC address of the client"
+    ::= { wlanClientEntry 2 }
+
+wlanClientSsid OBJECT-TYPE
+    SYNTAX      DisplayString (SIZE(0..64))
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "SSID the WLAN client is connected to"
+    ::= { wlanClientEntry 3 }
+
+wlanClientRssi OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "RSSI value of the client"
+    ::= { wlanClientEntry 4 }
+
+wlanClientTxRate OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Transmit rate of the client in kbps"
+    ::= { wlanClientEntry 5 }
+
+wlanClientRxRate OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Receive rate of the client in kbps"
+    ::= { wlanClientEntry 6 }
+
+wlanClientTimeConnected OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-only
+    STATUS      current
+    DESCRIPTION "Time the client has been connected to the Access Point in seconds"
+    ::= { wlanClientEntry 7 }
+
+END
