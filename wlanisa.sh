@@ -1,6 +1,6 @@
 #!/bin/sh -f
 #
-# wlclients_snmp_agent.sh
+# WLAN Information SNMP Agent (wlanisa.sh)
 #
 # SNMP agent that exposes the list of WLAN interfaces and currently connected
 # wireless clients via SNMP through Net-SNMP's "pass/pass_persist" feature.
